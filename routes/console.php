@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Str;
 use App\Models\AccountsReceivable;
 use App\Models\Client;
@@ -10,6 +11,7 @@ use App\Models\ClientCustody;
 use App\Models\ClientPaymentState;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
+use App\Services\TwilioService;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -116,3 +118,23 @@ Artisan::command('app:backfill-client-history {--dry-run : Show the planned chan
         $this->line(str_replace('_', ' ', $key) . ': ' . $value);
     }
 })->purpose('Merge duplicate clients and realign client history records');
+
+Artisan::command('app:send-work-order-whatsapp-reminders', function (TwilioService $twilio) {
+    $workOrders = WorkOrder::query()
+        ->with(['client', 'vehicle'])
+        ->whereDate('fecha_programada', today())
+        ->whereHas('client', fn ($query) => $query->whereNotNull('telefono')->where('telefono', '!=', ''))
+        ->where('status', '!=', 'Entregado')
+        ->get();
+
+    $sent = 0;
+
+    foreach ($workOrders as $workOrder) {
+        $twilio->notifyWorkOrderStatusOrDelivery($workOrder);
+        $sent++;
+    }
+
+    $this->info("WhatsApp reminders sent: {$sent}");
+})->purpose('Send WhatsApp reminders when a work order reaches its estimated delivery date');
+
+Schedule::command('app:send-work-order-whatsapp-reminders')->dailyAt('08:00');

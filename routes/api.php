@@ -47,6 +47,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('permission:work-orders.edit')->group(function () {
             Route::patch('/work-orders/{id}/close', [WorkOrderController::class, 'close']);
             Route::patch('/work-orders/{id}/status', [WorkOrderController::class, 'updateStatus']);
+            Route::post('/work-orders/{id}/whatsapp', [WorkOrderController::class, 'notifyWhatsApp']);
             Route::patch('/work-orders/{id}/diagnosis', [WorkOrderController::class, 'updateDiagnosis']);
             Route::post('/work-orders/{id}/checklist', [WorkOrderController::class, 'addChecklist']);
             Route::patch('/work-orders/{id}/checklist/{item}', [WorkOrderController::class, 'toggleChecklist']);

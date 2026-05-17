@@ -77,6 +77,31 @@ class WorkOrderController extends Controller
         return response()->json(['data' => new WorkOrderResource($wo)]);
     }
 
+    public function notifyWhatsApp(string $id)
+    {
+        $wo = WorkOrder::with(['client', 'vehicle'])->findOrFail($id);
+
+        if (!$wo->client || blank($wo->client->telefono)) {
+            return response()->json(['message' => 'La OT no tiene teléfono de cliente para enviar WhatsApp.'], 422);
+        }
+
+        if (!$this->twilio->isEnabled()) {
+            return response()->json([
+                'message' => 'Twilio WhatsApp no está configurado en el servidor.',
+            ], 503);
+        }
+
+        $sent = $this->twilio->notifyWorkOrderStatusOrDelivery($wo);
+
+        if (!$sent) {
+            return response()->json([
+                'message' => 'No se pudo enviar el WhatsApp. Revisa el número del cliente y la configuración de Twilio Sandbox.',
+            ], 502);
+        }
+
+        return response()->json(['message' => 'WhatsApp enviado correctamente.']);
+    }
+
     public function updateClient(Request $request, string $id)
     {
         $request->validate([

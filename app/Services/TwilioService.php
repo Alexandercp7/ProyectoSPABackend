@@ -3,6 +3,8 @@ namespace App\Services;
 
 use App\Mail\WorkOrderNotificationMail;
 use App\Models\WorkOrder;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Twilio\Rest\Client;
 
@@ -17,20 +19,26 @@ class TwilioService
 
     public function __construct()
     {
-        $sid    = config('services.twilio.sid');
-        $token  = config('services.twilio.token');
-        $this->from    = config('services.twilio.whatsapp_from') ?? '';
-        $this->enabled = $sid && $token && $this->from;
+        $apiKeySid = config('services.twilio.sid');
+        $apiSecret = config('services.twilio.token');
+        $accountSid = config('services.twilio.account_sid');
+        $this->from = config('services.twilio.whatsapp_from') ?? '';
+        $this->enabled = $apiKeySid && $apiSecret && $accountSid && $this->from;
 
         if ($this->enabled) {
-            $this->client = new Client($sid, $token);
+            $this->client = new Client($apiKeySid, $apiSecret, $accountSid);
         }
     }
 
-    public function notifyCreated(WorkOrder $wo): void
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    public function notifyCreated(WorkOrder $wo): bool
     {
         $phone = $wo->client?->telefono;
-        if (!$phone) return;
+        if (!$phone) return false;
 
         $portalUrl = config('app.frontend_url') . '/portal/' . $wo->portal_token;
         $vehiculo  = "{$wo->vehicle?->marca} {$wo->vehicle?->modelo} ({$wo->vehicle?->placas})";
@@ -49,12 +57,14 @@ class TwilioService
             'Ver portal',
             $portalUrl,
         );
+
+        return true;
     }
 
-    public function notifyStatusChanged(WorkOrder $wo): void
+    public function notifyStatusChanged(WorkOrder $wo): bool
     {
         $phone = $wo->client?->telefono;
-        if (!$phone) return;
+        if (!$phone) return false;
 
         $emoji = match ($wo->status) {
             'En Proceso'   => '🔧',
@@ -78,12 +88,14 @@ class TwilioService
             'Ver estado',
             $portalUrl,
         );
+
+        return true;
     }
 
-    public function notifyDelivered(WorkOrder $wo): void
+    public function notifyDelivered(WorkOrder $wo): bool
     {
         $phone = $wo->client?->telefono;
-        if (!$phone) return;
+        if (!$phone) return false;
 
         $vehiculo  = "{$wo->vehicle?->marca} {$wo->vehicle?->modelo}";
         $portalUrl = config('app.frontend_url') . '/portal/' . $wo->portal_token;
@@ -102,6 +114,67 @@ class TwilioService
             'Revisar resumen',
             $portalUrl,
         );
+
+        return true;
+    }
+
+    public function notifyDeliveryDay(WorkOrder $wo): bool
+    {
+        $phone = $wo->client?->telefono;
+        if (!$phone) return false;
+
+        $vehiculo = trim("{$wo->vehicle?->marca} {$wo->vehicle?->modelo}");
+        $portalUrl = config('app.frontend_url') . '/portal/' . $wo->portal_token;
+        $deliveryDate = $this->deliveryDateLabel($wo);
+
+        $statusLine = in_array($wo->status, ['Terminado', 'Entregado'], true)
+            ? 'Tu vehículo ya está listo para entrega.'
+            : "Hoy es la fecha estimada de entrega y tu OT sigue en estado *{$wo->status}*.";
+
+        $this->send($phone,
+            "📅 *{$wo->client->nombre}*, {$statusLine}\n\n" .
+            "🔖 Orden: *{$wo->id}*\n" .
+            (filled($deliveryDate) ? "🗓️ Fecha estimada: {$deliveryDate}\n" : '') .
+            (filled($vehiculo) ? "🚗 Vehículo: *{$vehiculo}*\n\n" : "\n") .
+            "Consulta el detalle en el portal:\n{$portalUrl}"
+        );
+
+        $this->sendEmail(
+            $wo,
+            'Recordatorio de entrega de tu vehículo',
+            "Hola {$wo->client->nombre}:\n\n" .
+            "Hoy corresponde la fecha estimada de entrega para la orden {$wo->id}.\n" .
+            (filled($vehiculo) ? "Vehículo: {$vehiculo}\n" : '') .
+            "Estado actual: {$wo->status}\n\n" .
+            "Puedes revisar el avance en el portal.",
+            'Ver portal',
+            $portalUrl,
+        );
+
+        return true;
+    }
+
+    public function notifyWorkOrderStatusOrDelivery(WorkOrder $wo): bool
+    {
+        if (in_array($wo->status, ['Terminado', 'Entregado'], true)) {
+            return $this->notifyDelivered($wo);
+        }
+
+        $deliveryDate = $wo->fecha_programada ? Carbon::parse($wo->fecha_programada)->startOfDay() : null;
+        if ($deliveryDate && $deliveryDate->isSameDay(now())) {
+            return $this->notifyDeliveryDay($wo);
+        }
+
+        return $this->notifyStatusChanged($wo);
+    }
+
+    private function deliveryDateLabel(WorkOrder $wo): ?string
+    {
+        if (!$wo->fecha_programada) {
+            return null;
+        }
+
+        return Carbon::parse($wo->fecha_programada)->format('d/m/Y');
     }
 
     private function sendEmail(WorkOrder $wo, string $subject, string $body, ?string $ctaLabel, ?string $ctaUrl): void
@@ -124,11 +197,11 @@ class TwilioService
         }
     }
 
-    private function send(string $phone, string $body): void
+    private function send(string $phone, string $body): bool
     {
         if (!$this->enabled) {
             Log::info('[Twilio disabled] WhatsApp to ' . $phone . ': ' . $body);
-            return;
+            return false;
         }
 
         // Normalize to E.164 — assumes Mexico (+52) if no country code present
@@ -143,8 +216,10 @@ class TwilioService
                 'from' => 'whatsapp:' . $this->from,
                 'body' => $body,
             ]);
+            return true;
         } catch (\Exception $e) {
             Log::error('[Twilio] Error sending WhatsApp to ' . $to . ': ' . $e->getMessage());
+            return false;
         }
     }
 }
