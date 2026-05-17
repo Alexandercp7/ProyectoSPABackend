@@ -9,6 +9,7 @@ use App\Models\InventoryItem;
 use App\UseCases\Inventory\AdjustInventoryStockUseCase;
 use App\UseCases\Inventory\CreateInventoryItemUseCase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class InventoryController extends Controller
 {
@@ -20,7 +21,7 @@ class InventoryController extends Controller
     public function index(Request $request)
     {
         $items = InventoryItem::when($request->tipo, fn($q) => $q->where('tipo', $request->tipo))
-            ->paginate(50);
+            ->paginate((int) ($request->per_page ?? 50));
         return InventoryItemResource::collection($items);
     }
 
@@ -50,6 +51,23 @@ class InventoryController extends Controller
         return response()->json(['data' => new InventoryItemResource($item)]);
     }
 
+    public function uploadPhoto(Request $request, int $id)
+    {
+        $request->validate(['foto' => 'required|image|max:5120']);
+        $item = InventoryItem::findOrFail($id);
+
+        if ($item->foto_url) {
+            $oldPath = preg_replace('#^.*/storage/#', '', $item->foto_url);
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        $path = $request->file('foto')->store("inventory/$id", 'public');
+        $url  = $request->getSchemeAndHttpHost() . Storage::url($path);
+        $item->update(['foto_url' => $url]);
+
+        return response()->json(['data' => new InventoryItemResource($item)]);
+    }
+
     public function custodyIndex()
     {
         return response()->json(['data' => ClientCustody::with(['client','workOrder'])->where('estado','Resguardado')->get()]);
@@ -59,12 +77,19 @@ class InventoryController extends Controller
     {
         $request->validate([
             'work_order_id' => 'required|exists:work_orders,id',
-            'client_id'     => 'required|exists:clients,id',
             'item'          => 'required|string',
             'responsable'   => 'required|string',
             'fecha_ingreso' => 'required|date',
         ]);
-        $custody = ClientCustody::create($request->validated());
+
+        $workOrder = \App\Models\WorkOrder::findOrFail($request->work_order_id);
+        $custody = ClientCustody::create([
+            'work_order_id' => $request->work_order_id,
+            'client_id'     => $workOrder->client_id,
+            'item'          => $request->item,
+            'responsable'   => $request->responsable,
+            'fecha_ingreso' => $request->fecha_ingreso,
+        ]);
         return response()->json(['data' => $custody], 201);
     }
 

@@ -10,8 +10,8 @@ class ClientResource extends JsonResource {
             'correo'        => $this->correo,
             'rfc'           => $this->rfc,
             'tag'           => $this->tag,
-            'total_vehiculos'=> $this->whenLoaded('vehicles', fn() => $this->vehicles->count()),
-            'total_ots'     => $this->whenLoaded('workOrders', fn() => $this->workOrders->count()),
+            'total_vehiculos' => $this->vehicles_count ?? ($this->relationLoaded('vehicles') ? $this->vehicles->count() : 0),
+            'total_ots'      => $this->work_orders_count ?? ($this->relationLoaded('workOrders') ? $this->workOrders->count() : 0),
             'deleted_at'    => $this->deleted_at,
             'created_at'    => $this->created_at,
         ];

@@ -6,7 +6,8 @@ class CreateInventoryItemRequest extends FormRequest {
     public function rules(): array {
         return [
             'nombre'        => 'required|string',
-            'tipo'          => 'required|in:refaccion,herramienta,equipo,consumible',
+            'tipo'          => 'required|in:Herramienta,Consumible,Equipo,Parte en venta',
+            'estado'        => 'nullable|in:Bueno,Regular,Danado',
             'stock_actual'  => 'required|integer|min:0',
             'stock_minimo'  => 'nullable|integer|min:0',
             'precio'        => 'nullable|numeric|min:0',

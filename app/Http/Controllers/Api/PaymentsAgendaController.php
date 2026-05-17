@@ -30,7 +30,7 @@ class PaymentsAgendaController extends Controller
     public function update(Request $request, int $id)
     {
         $agenda = PaymentsAgenda::findOrFail($id);
-        $agenda->update($request->only(['concepto','tipo','categoria','fecha_vencimiento','monto_presupuestado','notas']));
+        $agenda->update($request->only(['concepto','tipo','categoria','fecha_vencimiento','monto_presupuestado','monto_pagado','notas']));
         return response()->json(['data' => new PaymentsAgendaResource($agenda)]);
     }
 

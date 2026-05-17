@@ -6,10 +6,11 @@ class CreatePaymentsAgendaRequest extends FormRequest {
     public function rules(): array {
         return [
             'concepto'            => 'required|string',
-            'tipo'                => 'required|in:ingreso,egreso',
+            'tipo'                => 'required|in:Periódico,No Periódico',
             'categoria'           => 'required|string',
             'fecha_vencimiento'   => 'required|date',
             'monto_presupuestado' => 'required|numeric|min:0.01',
+            'monto_pagado'        => 'nullable|numeric|min:0',
             'notas'               => 'nullable|string',
         ];
     }

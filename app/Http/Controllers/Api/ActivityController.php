@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreActivityRequest;
+use App\Http\Requests\UpdateActivityRequest;
 use App\Http\Resources\ActivityResource;
 use App\Models\Activity;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class ActivityController extends Controller
         return response()->json(['data' => new ActivityResource($activity)]);
     }
 
-    public function update(StoreActivityRequest $request, int $id)
+    public function update(UpdateActivityRequest $request, int $id)
     {
         $activity = Activity::findOrFail($id);
         $activity->update($request->validated());

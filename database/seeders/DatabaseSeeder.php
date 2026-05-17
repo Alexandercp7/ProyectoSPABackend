@@ -10,6 +10,9 @@ class DatabaseSeeder extends Seeder
             RolesPermissionsSeeder::class,
             PriceItemsSeeder::class,
             DemoDataSeeder::class,
+            PaymentsAgendaSeeder::class,
+            FinanceSeeder::class,
+            KpisSeeder::class,
         ]);
     }
 }

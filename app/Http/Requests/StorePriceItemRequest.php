@@ -7,7 +7,7 @@ class StorePriceItemRequest extends FormRequest {
         return [
             'categoria'          => 'required|in:automotriz,torno',
             'categoria_principal'=> 'nullable|string',
-            'sistema'            => 'required|string',
+            'sistema'            => 'nullable|string',
             'familia'            => 'nullable|string',
             'concepto'           => 'required|string',
             'tamano'             => 'nullable|string',

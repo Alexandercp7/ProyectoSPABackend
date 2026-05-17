@@ -8,14 +8,14 @@ use Twilio\Rest\Client;
 class TwilioService
 {
     private ?Client $client = null;
-    private string $from;
+    private string $from = '';
     private bool $enabled;
 
     public function __construct()
     {
         $sid    = config('services.twilio.sid');
         $token  = config('services.twilio.token');
-        $this->from    = config('services.twilio.whatsapp_from', '');
+        $this->from    = config('services.twilio.whatsapp_from') ?? '';
         $this->enabled = $sid && $token && $this->from;
 
         if ($this->enabled) {
