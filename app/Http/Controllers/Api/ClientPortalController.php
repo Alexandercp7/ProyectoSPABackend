@@ -2,9 +2,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\WorkOrderShareMail;
 use App\Models\WorkOrder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
+/**
+ * Exposes the public portal used by clients to track work-order progress.
+ */
 class ClientPortalController extends Controller
 {
     public function show(string $token): JsonResponse
@@ -78,12 +85,39 @@ class ClientPortalController extends Controller
     public function regenerateToken(string $id): JsonResponse
     {
         $wo = WorkOrder::findOrFail($id);
-        $wo->update(['portal_token' => \Illuminate\Support\Str::uuid()]);
+        $wo->update(['portal_token' => Str::uuid()]);
 
         return response()->json([
             'data' => [
                 'portal_token' => $wo->portal_token,
                 'portal_url'   => config('app.frontend_url') . '/portal/' . $wo->portal_token,
+            ],
+        ]);
+    }
+
+    public function shareByEmail(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'correo' => 'required|email',
+        ]);
+
+        $wo = WorkOrder::with('client')->findOrFail($id);
+        $portalUrl = config('app.frontend_url') . '/portal/' . $wo->portal_token;
+        $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' . urlencode($portalUrl);
+        $recipient = $request->correo;
+
+        Mail::to($recipient)->send(new WorkOrderShareMail(
+            orderId: $wo->id,
+            portalUrl: $portalUrl,
+            qrUrl: $qrUrl,
+            clientName: $wo->client?->nombre ?? 'cliente',
+        ));
+
+        return response()->json([
+            'message' => 'Correo enviado correctamente.',
+            'data' => [
+                'sent_to' => $recipient,
+                'portal_url' => $portalUrl,
             ],
         ]);
     }

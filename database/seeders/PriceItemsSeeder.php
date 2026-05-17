@@ -4,14 +4,19 @@ namespace Database\Seeders;
 use App\Models\PriceItem;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PriceItemsSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        PriceItem::truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        Schema::disableForeignKeyConstraints();
+
+        try {
+            PriceItem::truncate();
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
 
         $automotriz = [
             // ── Mecánica General ─────────────────────────────────────────────

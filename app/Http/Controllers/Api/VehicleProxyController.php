@@ -5,6 +5,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 
+/**
+ * Proxies vehicle lookup requests for external integration points.
+ */
 class VehicleProxyController extends Controller
 {
     private const NHTSA_BASE = 'https://vpic.nhtsa.dot.gov/api/vehicles';

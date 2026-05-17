@@ -12,18 +12,34 @@ class CreateWorkOrderUseCase
     public function execute(array $data, int $userId): WorkOrder
     {
         return DB::transaction(function () use ($data, $userId) {
+            $clientName = trim((string) ($data['cliente_nombre'] ?? ''));
+            $clientPhone = trim((string) ($data['cliente_telefono'] ?? ''));
+            $clientEmail = $data['cliente_correo'] ?? null;
 
             // ── Resolve client ──────────────────────────────────────────────
             if (!empty($data['client_id'])) {
                 $clientId = $data['client_id'];
             } else {
-                $client = Client::firstOrCreate(
-                    ['telefono' => $data['cliente_telefono'] ?? 'Sin telefono'],
-                    [
-                        'nombre' => $data['cliente_nombre'] ?? 'Cliente',
-                        'correo' => $data['cliente_correo'] ?? null,
-                    ]
-                );
+                $client = null;
+
+                if ($clientPhone !== '') {
+                    $client = Client::where('telefono', $clientPhone)->first();
+                }
+
+                if (!$client && $clientName !== '') {
+                    $client = Client::whereRaw('LOWER(nombre) = ?', [mb_strtolower($clientName)])->first();
+                }
+
+                if (!$client) {
+                    $client = Client::create([
+                        'nombre' => $clientName !== '' ? $clientName : 'Cliente',
+                        'telefono' => $clientPhone !== '' ? $clientPhone : null,
+                        'correo' => $clientEmail,
+                    ]);
+                } elseif ($clientEmail && !$client->correo) {
+                    $client->update(['correo' => $clientEmail]);
+                }
+
                 $clientId = $client->id;
             }
 
@@ -34,19 +50,33 @@ class CreateWorkOrderUseCase
                 $placas = $data['vehiculo_placas'] ?? null;
                 $vin    = $data['vehiculo_vin'] ?? null;
 
-                $vehicleQuery = Vehicle::where('client_id', $clientId);
-                if ($placas) $vehicleQuery->orWhere('placas', $placas);
-                if ($vin)    $vehicleQuery->orWhere('vin', $vin);
+                $vehicle = null;
 
-                $vehicle = $vehicleQuery->first() ?? Vehicle::create([
-                    'client_id'          => $clientId,
-                    'marca'              => $data['vehiculo_marca']       ?? 'Pendiente',
-                    'modelo'             => $data['vehiculo_modelo']      ?? 'Pendiente',
-                    'anio'               => $data['vehiculo_anio']        ?? date('Y'),
-                    'placas'             => $placas,
-                    'vin'                => $vin,
-                    'kilometraje_actual' => $data['vehiculo_kilometraje'] ?? 0,
-                ]);
+                if ($placas || $vin) {
+                    $vehicle = Vehicle::where('client_id', $clientId)
+                        ->when($placas, fn ($query) => $query->where('placas', $placas))
+                        ->when($vin, fn ($query) => $query->orWhere('vin', $vin))
+                        ->first();
+                }
+
+                if (!$vehicle && ($placas || $vin)) {
+                    $vehicle = Vehicle::query()
+                        ->when($placas, fn ($query) => $query->where('placas', $placas))
+                        ->when($vin, fn ($query) => $query->orWhere('vin', $vin))
+                        ->first();
+                }
+
+                if (!$vehicle) {
+                    $vehicle = Vehicle::create([
+                        'client_id'          => $clientId,
+                        'marca'              => $data['vehiculo_marca']       ?? 'Pendiente',
+                        'modelo'             => $data['vehiculo_modelo']      ?? 'Pendiente',
+                        'anio'               => $data['vehiculo_anio']        ?? date('Y'),
+                        'placas'             => $placas,
+                        'vin'                => $vin,
+                        'kilometraje_actual' => $data['vehiculo_kilometraje'] ?? 0,
+                    ]);
+                }
 
                 $vehicleId = $vehicle->id;
             }

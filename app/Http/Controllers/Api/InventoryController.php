@@ -11,6 +11,9 @@ use App\UseCases\Inventory\CreateInventoryItemUseCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Handles inventory items, stock movements, and client custody records.
+ */
 class InventoryController extends Controller
 {
     public function __construct(

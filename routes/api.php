@@ -205,6 +205,7 @@ Route::prefix('v1')->group(function () {
         // Portal cliente
         Route::middleware('permission:work-orders.create')->group(function () {
             Route::post('/work-orders/{id}/portal-token', [ClientPortalController::class, 'regenerateToken']);
+            Route::post('/work-orders/{id}/portal-share', [ClientPortalController::class, 'shareByEmail']);
         });
     });
 });

@@ -7,6 +7,9 @@ use App\Http\Resources\ActivityResource;
 use App\Models\Activity;
 use Illuminate\Http\Request;
 
+/**
+ * Manages activities, comments, and kanban-style status updates.
+ */
 class ActivityController extends Controller
 {
     public function index(Request $request)

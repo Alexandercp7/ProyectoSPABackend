@@ -1,10 +1,14 @@
 <?php
 namespace App\Services;
 
+use App\Mail\WorkOrderNotificationMail;
 use App\Models\WorkOrder;
 use Illuminate\Support\Facades\Log;
 use Twilio\Rest\Client;
 
+/**
+ * Sends client notifications for work-order events through WhatsApp and email.
+ */
 class TwilioService
 {
     private ?Client $client = null;
@@ -37,6 +41,14 @@ class TwilioService
             "🔧 Problema reportado: {$wo->problema}\n\n" .
             "Sigue el estado de tu OT en tiempo real:\n{$portalUrl}"
         );
+
+        $this->sendEmail(
+            $wo,
+            'Hemos recibido tu orden de trabajo',
+            "Hola {$wo->client->nombre}:\n\nRecibimos tu vehículo {$vehiculo}.\nOrden: {$wo->id}\nProblema reportado: {$wo->problema}",
+            'Ver portal',
+            $portalUrl,
+        );
     }
 
     public function notifyStatusChanged(WorkOrder $wo): void
@@ -58,6 +70,14 @@ class TwilioService
             "{$emoji} *{$wo->client->nombre}*, el estado de tu orden *{$wo->id}* cambió a: *{$wo->status}*.\n\n" .
             "Consulta los detalles aquí:\n{$portalUrl}"
         );
+
+        $this->sendEmail(
+            $wo,
+            "Tu orden {$wo->id} cambió de estado",
+            "Hola {$wo->client->nombre}:\n\nEl estado de tu orden {$wo->id} cambió a {$wo->status}.\nPuedes consultar el avance en el portal.",
+            'Ver estado',
+            $portalUrl,
+        );
     }
 
     public function notifyDelivered(WorkOrder $wo): void
@@ -74,6 +94,34 @@ class TwilioService
             "Revisa el resumen completo de servicios:\n{$portalUrl}\n\n" .
             "¡Gracias por tu preferencia! 🙏"
         );
+
+        $this->sendEmail(
+            $wo,
+            'Tu vehículo está listo para recoger',
+            "Hola {$wo->client->nombre}:\n\nTu vehículo {$vehiculo} ya está listo para recoger.\nOrden: {$wo->id}\nGracias por confiar en nosotros.",
+            'Revisar resumen',
+            $portalUrl,
+        );
+    }
+
+    private function sendEmail(WorkOrder $wo, string $subject, string $body, ?string $ctaLabel, ?string $ctaUrl): void
+    {
+        $email = $wo->client?->correo;
+        if (!$email) {
+            return;
+        }
+
+        try {
+            Mail::to($email)->send(new WorkOrderNotificationMail(
+                subjectLine: $subject,
+                headline: $subject,
+                body: $body,
+                ctaLabel: $ctaLabel,
+                ctaUrl: $ctaUrl,
+            ));
+        } catch (\Throwable $e) {
+            Log::error('[Mail] Error sending work-order email to ' . $email . ': ' . $e->getMessage());
+        }
     }
 
     private function send(string $phone, string $body): void

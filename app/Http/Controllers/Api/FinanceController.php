@@ -16,6 +16,9 @@ use App\UseCases\Finance\RegisterReceivablePaymentUseCase;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
+/**
+ * Exposes financial summaries, cash entries, receivables, and payables.
+ */
 class FinanceController extends Controller
 {
     public function __construct(

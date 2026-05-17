@@ -6,6 +6,9 @@ use App\Http\Resources\EmployeeResource;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 
+/**
+ * Handles employee and technician records exposed to administrators.
+ */
 class EmployeeController extends Controller
 {
     public function index()

@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
+/**
+ * Manages administrative users, roles, and permissions.
+ */
 class UserController extends Controller
 {
     public function index()

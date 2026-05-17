@@ -8,6 +8,9 @@ use App\UseCases\Clients\DeleteClientUseCase;
 use App\UseCases\Clients\UpsertClientUseCase;
 use Illuminate\Http\Request;
 
+/**
+ * Handles client records and their associated vehicles and work orders.
+ */
 class ClientController extends Controller
 {
     public function __construct(
@@ -36,6 +39,13 @@ class ClientController extends Controller
     public function show(int $id)
     {
         $client = Client::with(['vehicles','workOrders','paymentStates'])->findOrFail($id);
+        $client = Client::with([
+            'vehicles.workOrders.services.priceItem',
+            'workOrders.vehicle',
+            'workOrders.tecnico',
+            'workOrders.accountsReceivable',
+            'paymentStates',
+        ])->findOrFail($id);
         return response()->json(['data' => new ClientResource($client)]);
     }
 

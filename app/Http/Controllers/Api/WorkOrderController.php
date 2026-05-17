@@ -17,6 +17,9 @@ use App\UseCases\WorkOrders\UpdateWorkOrderStatusUseCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Manages the lifecycle of work orders and coordinates client notifications.
+ */
 class WorkOrderController extends Controller
 {
     public function __construct(

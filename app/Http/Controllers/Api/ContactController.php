@@ -6,6 +6,9 @@ use App\Http\Resources\ContactResource;
 use App\Models\Contact;
 use Illuminate\Http\Request;
 
+/**
+ * Manages supplier and contact records for the finance module.
+ */
 class ContactController extends Controller
 {
     public function index(Request $request)

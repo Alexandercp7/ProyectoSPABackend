@@ -6,6 +6,9 @@ use App\Http\Resources\PriceItemResource;
 use App\Models\PriceItem;
 use Illuminate\Http\Request;
 
+/**
+ * Provides the catalog of price items used for quotes and service lookup.
+ */
 class PriceController extends Controller
 {
     public function index(Request $request)

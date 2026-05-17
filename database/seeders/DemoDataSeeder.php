@@ -47,10 +47,10 @@ class DemoDataSeeder extends Seeder
         }
 
         $items = [
-            ['nombre'=>'Aceite Mobil 5W30','tipo'=>'consumible','stock_actual'=>20,'stock_minimo'=>5,'precio'=>120,'precio_venta'=>180],
-            ['nombre'=>'Filtro de aceite Toyota','tipo'=>'refaccion','stock_actual'=>8,'stock_minimo'=>3,'precio'=>85,'precio_venta'=>150],
-            ['nombre'=>'Balatas Brembo delanteras','tipo'=>'refaccion','stock_actual'=>6,'stock_minimo'=>2,'precio'=>350,'precio_venta'=>600],
-            ['nombre'=>'Multimetro digital','tipo'=>'herramienta','stock_actual'=>2,'stock_minimo'=>1,'precio'=>800,'precio_venta'=>0],
+            ['nombre'=>'Aceite Mobil 5W30','tipo'=>'Consumible','stock_actual'=>20,'stock_minimo'=>5,'precio'=>120,'precio_venta'=>180],
+            ['nombre'=>'Filtro de aceite Toyota','tipo'=>'Parte en venta','stock_actual'=>8,'stock_minimo'=>3,'precio'=>85,'precio_venta'=>150],
+            ['nombre'=>'Balatas Brembo delanteras','tipo'=>'Parte en venta','stock_actual'=>6,'stock_minimo'=>2,'precio'=>350,'precio_venta'=>600],
+            ['nombre'=>'Multimetro digital','tipo'=>'Herramienta','stock_actual'=>2,'stock_minimo'=>1,'precio'=>800,'precio_venta'=>0],
         ];
         foreach ($items as $item) {
             InventoryItem::firstOrCreate(['nombre' => $item['nombre']], $item);

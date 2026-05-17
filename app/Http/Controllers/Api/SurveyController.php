@@ -5,6 +5,9 @@ use App\Models\Survey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+/**
+ * Receives and exposes client survey responses.
+ */
 class SurveyController extends Controller
 {
     public function showByToken(string $token)

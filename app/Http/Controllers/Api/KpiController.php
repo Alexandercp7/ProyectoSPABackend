@@ -7,6 +7,9 @@ use App\Models\KpiActivity;
 use App\Models\OrganizationInfo;
 use Illuminate\Http\Request;
 
+/**
+ * Serves KPI dashboards, role metrics, and activity summaries.
+ */
 class KpiController extends Controller
 {
     public function index()

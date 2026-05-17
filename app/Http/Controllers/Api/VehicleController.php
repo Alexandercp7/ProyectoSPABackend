@@ -5,6 +5,9 @@ use App\Http\Requests\CreateVehicleRequest;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
 
+/**
+ * Exposes vehicle CRUD operations for client and work-order flows.
+ */
 class VehicleController extends Controller
 {
     public function index(Request $request)

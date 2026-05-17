@@ -8,6 +8,9 @@ use App\UseCases\Payments\ConfirmPaymentUseCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Manages scheduled payments and receipt uploads.
+ */
 class PaymentsAgendaController extends Controller
 {
     public function __construct(private ConfirmPaymentUseCase $confirmUC) {}
