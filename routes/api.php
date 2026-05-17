@@ -31,6 +31,7 @@ Route::prefix('v1')->group(function () {
         // Auth — accesible por cualquier usuario autenticado
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::put('/auth/me', [AuthController::class, 'updateProfile']);
         Route::put('/auth/password', [AuthController::class, 'updatePassword']);
 
         // Work Orders

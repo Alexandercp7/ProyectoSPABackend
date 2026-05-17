@@ -7,6 +7,14 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
+    private function userPayload(User $user): array
+    {
+        return array_merge($user->only(['id', 'name', 'email']), [
+            'roles'       => $user->getRoleNames(),
+            'permissions' => $user->getAllPermissions()->pluck('name'),
+        ]);
+    }
+
     public function login(Request $request)
     {
         $request->validate([
@@ -25,10 +33,7 @@ class AuthController extends Controller
         return response()->json([
             'data' => [
                 'token' => $token,
-                'user'  => array_merge($user->only(['id','name','email']), [
-                    'roles'       => $user->getRoleNames(),
-                    'permissions' => $user->getAllPermissions()->pluck('name'),
-                ]),
+                'user'  => $this->userPayload($user),
             ],
         ]);
     }
@@ -43,10 +48,26 @@ class AuthController extends Controller
     {
         $user = $request->user();
         return response()->json([
-            'data' => array_merge($user->only(['id','name','email']), [
-                'roles'       => $user->getRoleNames(),
-                'permissions' => $user->getAllPermissions()->pluck('name'),
-            ]),
+            'data' => $this->userPayload($user),
+        ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $request->validate([
+            'name'  => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $request->user()->id,
+        ]);
+
+        $request->user()->update([
+            'name'  => $request->name,
+            'email' => $request->email,
+        ]);
+
+        $request->user()->refresh();
+
+        return response()->json([
+            'data' => $this->userPayload($request->user()),
         ]);
     }
 
